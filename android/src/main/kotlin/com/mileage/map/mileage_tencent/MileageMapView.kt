@@ -27,6 +27,16 @@ import com.tencent.tencentmap.mapsdk.maps.*
 import com.tencent.tencentmap.mapsdk.maps.model.*
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import java.lang.StringBuilder
+import com.tencent.tencentmap.mapsdk.maps.model.LatLng
+
+import com.tencent.tencentmap.mapsdk.maps.model.CameraPosition
+
+import com.tencent.tencentmap.mapsdk.maps.CameraUpdateFactory
+
+import com.tencent.tencentmap.mapsdk.maps.CameraUpdate
+
+
+
 
 class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, args: Any?) :
         PlatformView, MethodChannel.MethodCallHandler, DefaultLifecycleObserver, TencentMap.OnMapLoadedCallback, TencentLocationListener, LocationSource {
@@ -76,8 +86,22 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
         //uiSettings.isRotateGesturesEnabled = true
         uiSettings.setAllGesturesEnabled(true)
 
-        /*val myLocationStyle: MyLocationStyle  = MyLocationStyle()
-        myLocationStyle.anchor(0.5f, 0.5f)*/
+        val myLocationStyle  = MyLocationStyle()
+        myLocationStyle.anchor(0.5f, 0.5f)
+        myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE)
+        tencentMap.setMyLocationStyle(myLocationStyle)
+
+        tencentMap.setMapType(TencentMap.MAP_TYPE_NORMAL)
+
+        tencentMap.setBuilding3dEffectEnable(false)
+
+        val cameraSigma = CameraUpdateFactory.newCameraPosition(CameraPosition(
+                LatLng(39.977290, 116.337000),  //中心点坐标，地图目标经纬度
+                19F,  //目标缩放级别
+                15f,  //目标倾斜角[0.0 ~ 45.0] (垂直地图时为0)
+                45f)) //目标旋转角 0~360° (正北方为0)
+
+        tencentMap.moveCamera(cameraSigma)
 
         initLocation()
 
@@ -205,17 +229,17 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
         Log.d(TAG, "id##$viewId => MileageMapView -> onMapLoaded")
     }
 
-    override fun onLocationChanged(location: TencentLocation?, error: Int, reason: String?) {
-        Log.d(TAG, "id##$viewId => MileageMapView -> onLocationChanged -> location: $location, error: $error, reason: $reason")
+    override fun onLocationChanged(tencentLocation: TencentLocation?, error: Int, reason: String?) {
+        Log.d(TAG, "id##$viewId => MileageMapView -> onLocationChanged -> location: $tencentLocation, error: $error, reason: $reason")
         if (error === TencentLocation.ERROR_OK && locationChangedListener != null) {
             val location = Location(tencentLocation!!.provider)
             //设置经纬度
-            location.latitude = tencentLocation!!.latitude
-            location.longitude = tencentLocation!!.longitude
+            location.latitude = tencentLocation.latitude
+            location.longitude = tencentLocation.longitude
             //设置精度，这个值会被设置为定位点上表示精度的圆形半径
-            location.accuracy = tencentLocation!!.accuracy
+            location.accuracy = tencentLocation.accuracy
             //设置定位标的旋转角度，注意 tencentLocation.getBearing() 只有在 gps 时才有可能获取
-            location.bearing = tencentLocation!!.bearing
+            location.bearing = tencentLocation.bearing as Float
             //将位置信息返回给地图
             locationChangedListener!!.onLocationChanged(location)
         }
