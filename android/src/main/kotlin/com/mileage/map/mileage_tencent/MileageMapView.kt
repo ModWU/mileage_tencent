@@ -112,7 +112,7 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
         locationRequest = TencentLocationRequest.create()
         locationRequest!!.isAllowDirection = true
         //设置定位周期（位置监听器回调周期）为3s
-        locationRequest!!.interval = 1000 * 30
+        locationRequest!!.interval = 1000 * 60
     }
 
     /*private fun buildNotification(): Notification? {

@@ -26,7 +26,7 @@ object PermissionUtils {
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
         )
         if (if (Build.VERSION.SDK_INT >= 29) EasyPermissions.hasPermissions(activity, *permissionsForQ) else EasyPermissions.hasPermissions(activity, *permissions)) {
-            Toast.makeText(activity, "权限OK", Toast.LENGTH_LONG).show()
+            //Toast.makeText(activity, "权限OK", Toast.LENGTH_LONG).show()
         } else {
             if (Build.VERSION.SDK_INT >= 29) {
                 EasyPermissions.requestPermissions(activity, "需要权限",
