@@ -1,17 +1,11 @@
 package com.mileage.map.mileage_tencent
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.location.Location
 import android.net.Uri
-import android.os.Build
 import android.os.Looper
 import android.util.Log
 import android.view.View
@@ -30,17 +24,6 @@ import com.tencent.map.geolocation.TencentLocationRequest
 import com.tencent.tencentmap.mapsdk.maps.*
 import com.tencent.tencentmap.mapsdk.maps.model.*
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
-import java.lang.StringBuilder
-import com.tencent.tencentmap.mapsdk.maps.model.LatLng
-
-import com.tencent.tencentmap.mapsdk.maps.model.CameraPosition
-
-import com.tencent.tencentmap.mapsdk.maps.CameraUpdateFactory
-
-import com.tencent.tencentmap.mapsdk.maps.CameraUpdate
-
-
-
 
 class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, args: Any?) :
         PlatformView, MethodChannel.MethodCallHandler, DefaultLifecycleObserver, TencentMap.OnMapLoadedCallback, TencentLocationListener, LocationSource {
@@ -172,6 +155,7 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
     }
 
     override fun dispose() {
+        locationManager?.removeUpdates(this)
         tencentMap.setLocationSource(null)
         tencentMap.removeOnMapLoadedCallback(this)
         mapView?.onDestroy()
@@ -183,6 +167,10 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
 
         methodChannel = null
         mapView = null
+
+        locationManager = null
+        locationRequest = null
+        locationChangedListener = null
     }
 
     override fun onStart(owner: LifecycleOwner) {
