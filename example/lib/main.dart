@@ -19,6 +19,8 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
 
+  FlutterMileageTencent? _flutterMileageTencent;
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +49,20 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  void _onPlatformViewCreated(FlutterMileageTencent flutterMileageTencent) {
+    flutterMileageTencent.setListener((CallbackType type, dynamic arguments) {
+      if (type == CallbackType.activate) {
+        print("_onPlatformViewCreated CallbackType.activate => ${arguments}");
+        if (arguments['isSuccess'] == true) {
+          _flutterMileageTencent = flutterMileageTencent;
+        }
+      } else if (type == CallbackType.onLocationChanged) {
+        print(
+            "_onPlatformViewCreated CallbackType.onLocationChanged => $arguments");
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -56,10 +72,88 @@ class _MyAppState extends State<MyApp> {
         ),
         body: Center(
           child: Column(
-            children: const [
-              Expanded(child: MileageMapView()),
-              /*Expanded(child: MileageMapView()),
-              Text('地图显示2'),*/
+            children: [
+              Expanded(
+                  child: MileageMapView(
+                      onPlatformViewCreated: _onPlatformViewCreated)),
+              GestureDetector(
+                onTap: () async {
+                  if (_flutterMileageTencent == null) {
+                    print(
+                        "_onPlatformViewCreated 没有激活");
+                    return;
+                  }
+                  final bool isHasMap = await _flutterMileageTencent!.isAvailable('com.tencent.map');
+                  print("腾讯地图: $isHasMap");
+                },
+                child: Text("腾讯地图"),
+              ),
+              GestureDetector(
+                onTap: () async {
+                  if (_flutterMileageTencent == null) {
+                    print(
+                        "_onPlatformViewCreated 没有激活");
+                    return;
+                  }
+                  final bool isHasMap = await _flutterMileageTencent!.isAvailable('com.autonavi.minimap');
+                  print("高德地图: $isHasMap");
+                },
+                child: Text("高德地图"),
+              ),
+              GestureDetector(
+                onTap: () async {
+                  if (_flutterMileageTencent == null) {
+                    print(
+                        "_onPlatformViewCreated 没有激活");
+                    return;
+                  }
+                  final bool isHasMap = await _flutterMileageTencent!.isAvailable('com.baidu.BaiduMap');
+                  print("百度地图：$isHasMap");
+                },
+                child: Text("百度地图"),
+              ),
+              GestureDetector(
+                onTap: () async {
+                  if (_flutterMileageTencent == null) {
+                    print(
+                        "_onPlatformViewCreated 没有激活");
+                    return;
+                  }
+                  print("跳到腾讯地图");//qqmap://map/routeplan?type=drive&to=我的终点&tocoord=" + mLatitude + "," + mLongitude
+                  _flutterMileageTencent!.jumpToMapByData('qqmap://map/routeplan?type=drive&to=我的终点&tocoord=31.307215,121.541367');
+                },
+                child: Text("跳到腾讯地图"),
+              ),
+              GestureDetector(
+                onTap: () async {
+                  if (_flutterMileageTencent == null) {
+                    print(
+                        "_onPlatformViewCreated 没有激活");
+                    return;
+                  }
+                  print("跳到百度地图");
+                  _flutterMileageTencent!.jumpToMapByIntent(
+                      'intent://map/direction?'
+                          'destination=latlng:31.307215,121.541367'
+                          '|name:我的终点'
+                          '&mode=driving&'
+                          '&src=appname#Intent;scheme=bdapp;package=com.baidu.BaiduMap;end'
+                  );
+                },
+                child: Text("跳到百度地图"),
+              ),
+              GestureDetector(
+                onTap: () async {
+                  if (_flutterMileageTencent == null) {
+                    print(
+                        "_onPlatformViewCreated 没有激活");
+                    return;
+                  }/*androidamap://navi?sourceApplication=appname&poiname=fangheng&lat=" + mLatitude + "&lon=" + mLongitude + "&dev=1&style=2*/
+                  print("跳到高德地图");
+                  _flutterMileageTencent!.jumpToMapByData('androidamap://navi?sourceApplication=appname&poiname=fangheng&lat=31.307215&lon=121.541367&dev=1&style=2');
+                },
+                child: Text("跳到高德地图"),
+              ),
             ],
           ),
         ),

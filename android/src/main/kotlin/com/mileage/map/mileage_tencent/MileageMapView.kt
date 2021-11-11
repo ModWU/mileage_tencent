@@ -4,9 +4,13 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.location.Location
+import android.net.Uri
 import android.os.Build
 import android.os.Looper
 import android.util.Log
@@ -91,17 +95,17 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
         myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_LOCATION_ROTATE)
         tencentMap.setMyLocationStyle(myLocationStyle)
 
-        tencentMap.setMapType(TencentMap.MAP_TYPE_NORMAL)
+        tencentMap.mapType = TencentMap.MAP_TYPE_NORMAL
 
         tencentMap.setBuilding3dEffectEnable(false)
 
-        val cameraSigma = CameraUpdateFactory.newCameraPosition(CameraPosition(
+       /* val cameraSigma = CameraUpdateFactory.newCameraPosition(CameraPosition(
                 LatLng(39.977290, 116.337000),  //中心点坐标，地图目标经纬度
                 19F,  //目标缩放级别
                 15f,  //目标倾斜角[0.0 ~ 45.0] (垂直地图时为0)
                 45f)) //目标旋转角 0~360° (正北方为0)
 
-        tencentMap.moveCamera(cameraSigma)
+        tencentMap.moveCamera(cameraSigma)*/
 
         initLocation()
 
@@ -123,8 +127,9 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
         locationManager = TencentLocationManager.getInstance(context)
         //创建定位请求
         locationRequest = TencentLocationRequest.create()
+        locationRequest!!.isAllowDirection = true
         //设置定位周期（位置监听器回调周期）为3s
-        locationRequest!!.interval = 3000
+        locationRequest!!.interval = 1000 * 30
     }
 
     /*private fun buildNotification(): Notification? {
@@ -221,10 +226,6 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
         }
     }*/
 
-    override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-        TODO("Not yet implemented")
-    }
-
     override fun onMapLoaded() {
         Log.d(TAG, "id##$viewId => MileageMapView -> onMapLoaded")
     }
@@ -242,11 +243,15 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
             location.bearing = tencentLocation.bearing as Float
             //将位置信息返回给地图
             locationChangedListener!!.onLocationChanged(location)
+            methodChannel!!.invokeMethod("onLocationChanged", mapOf(
+                    "latitude" to tencentLocation.latitude,
+                    "longitude" to tencentLocation.longitude
+                    ))
         }
     }
 
     override fun onStatusUpdate(p0: String?, p1: Int, p2: String?) {
-        Log.d(TAG, "id##$viewId => MileageMapView -> onStatusUpdate -> p0: $p0, p1: $p1, p2: $p2")
+       // Log.d(TAG, "id##$viewId => MileageMapView -> onStatusUpdate -> p0: $p0, p1: $p1, p2: $p2")
     }
 
     override fun activate(onLocationChangedListener: LocationSource.OnLocationChangedListener?) {
@@ -267,6 +272,15 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
             else -> {
             }
         }
+
+        if (err == 1 || err == 2 || err == 3) {
+            methodChannel!!.invokeMethod("onActivate", mapOf(
+                    "isSuccess" to false))
+        } else {
+            methodChannel!!.invokeMethod("onActivate", mapOf(
+                    "isSuccess" to true))
+        }
+
     }
 
     override fun deactivate() {
@@ -275,6 +289,101 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
         locationManager = null
         locationRequest = null
         locationChangedListener = null
+    }
+
+    private fun jumpToMapByIntent(uri: String): Boolean {
+        try {
+            val intent: Intent = Intent.parseUri(uri, 0)
+            context.startActivity(intent)
+            return true
+        } catch(e: Exception) {
+            Log.d(TAG, "_jumpToMapByIntent error: $e")
+            return false
+        }
+    }
+
+    private fun jumpToMapByIntent(call: MethodCall, result: MethodChannel.Result) {
+        if (call.arguments is String) {
+            val uri: String = call.arguments as String
+            if (jumpToMapByIntent(uri)) {
+                result.success(true)
+            } else {
+                result.error("-2", "跳转失败", "jumpToMapByIntent error: $uri")
+            }
+        } else {
+            result.error("-1", "参数类型不正确", "expect type String, received type ${call.arguments.javaClass}")
+        }
+
+    }
+
+    private fun jumpToMapByData(uri: String): Boolean {
+        try {
+            val intent = Intent()
+            intent.action = Intent.ACTION_VIEW
+            intent.addCategory(Intent.CATEGORY_DEFAULT)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            intent.data = Uri.parse(uri)
+            context.startActivity(intent)
+            return true
+        } catch(e: Exception) {
+            Log.d(TAG, "_jumpToMapByData error: $e")
+            return false
+        }
+    }
+
+    private fun jumpToMapByData(call: MethodCall, result: MethodChannel.Result) {
+        Log.d(TAG, "jumpToMapByData => arguments => ${call.arguments}")
+        if (call.arguments is String) {
+            val uri: String = call.arguments as String
+            if (jumpToMapByData(uri)) {
+                result.success(true)
+            } else {
+                result.error("-2", "跳转失败", "jumpToMapByData error: $uri")
+            }
+        } else {
+            result.error("-1", "参数类型不正确", "expect type String, received type ${call.arguments.javaClass}")
+        }
+
+    }
+
+    private fun isAvailable(packageName: String): Boolean {
+        val packageManager: PackageManager = context.packageManager
+        val packagesInfoList: List<PackageInfo> = packageManager.getInstalledPackages(0)
+
+        val packageNames: MutableList<String> = arrayListOf()
+        if (packagesInfoList.isNotEmpty()) {
+            for (packageInfo in packagesInfoList) {
+                val packageName: String = packageInfo.packageName
+                packageNames += packageName
+            }
+        }
+        return packageNames.contains(packageName)
+    }
+
+    private fun isAvailable(call: MethodCall, result: MethodChannel.Result) {
+        if (call.arguments is String) {
+            result.success(isAvailable(call.arguments as String))
+        } else {
+            result.error("-1", "参数类型不正确", "expect type String, received type ${call.arguments.javaClass}")
+        }
+
+    }
+
+    override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
+        when (call.method) {
+            "isAvailable" -> {
+                isAvailable(call, result)
+            }
+            "jumpToMapByData" -> {
+                jumpToMapByData(call, result)
+            }
+            "jumpToMapByIntent" -> {
+                jumpToMapByIntent(call, result)
+            }
+            else -> {
+                result.notImplemented()
+            }
+        }
     }
 
 
