@@ -16,7 +16,7 @@ import pub.devrel.easypermissions.EasyPermissions
 
 
 /** MileageTencentPlugin */
-class MileageTencentPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, PluginRegistry.RequestPermissionsResultListener {
+class MileageTencentPlugin: FlutterPlugin, MethodCallHandler, ActivityAware/*, PluginRegistry.RequestPermissionsResultListener*/ {
   /// The MethodChannel that will the communication between Flutter and native Android
   ///
   /// This local reference serves to register the plugin with the Flutter Engine and unregister it
@@ -45,11 +45,11 @@ class MileageTencentPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     PluginContext.activityPluginBinding = binding
 
-    binding.addRequestPermissionsResultListener(this)
+//    binding.addRequestPermissionsResultListener(this)
 
-    if (Build.VERSION.SDK_INT >= 23) {
-      PermissionUtils.requirePermission(binding.activity)
-    }
+//    /*if (Build.VERSION.SDK_INT >= 23) {
+//      PermissionUtils.requirePermission(binding.activity)
+//    }*/
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
@@ -61,16 +61,16 @@ class MileageTencentPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Plu
   }
 
   override fun onDetachedFromActivity() {
-    PluginContext.activityPluginBinding?.removeRequestPermissionsResultListener(this)
+    //PluginContext.activityPluginBinding?.removeRequestPermissionsResultListener(this)
     PluginContext.activityPluginBinding = null
   }
 
-  override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?, grantResults: IntArray?): Boolean {
+  /*override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?, grantResults: IntArray?): Boolean {
     var isHandled = false
     if (grantResults != null && permissions != null) {
       EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
       isHandled = true
     }
     return isHandled
-  }
+  }*/
 }
