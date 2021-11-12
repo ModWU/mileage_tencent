@@ -1,6 +1,6 @@
 package com.mileage.map.mileage_tencent
 
-import android.os.Build
+//import android.os.Build
 import androidx.annotation.NonNull
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -11,8 +11,8 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import com.gv.livechat.flutter_live_chat.PluginContext
-import io.flutter.plugin.common.PluginRegistry
-import pub.devrel.easypermissions.EasyPermissions
+//import io.flutter.plugin.common.PluginRegistry
+//import pub.devrel.easypermissions.EasyPermissions
 
 
 /** MileageTencentPlugin */
