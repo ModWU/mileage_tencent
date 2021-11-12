@@ -29,10 +29,10 @@ object PermissionUtils {
             //Toast.makeText(activity, "权限OK", Toast.LENGTH_LONG).show()
         } else {
             if (Build.VERSION.SDK_INT >= 29) {
-                EasyPermissions.requestPermissions(activity, "需要权限",
+                EasyPermissions.requestPermissions(activity, "地图定位需要请求授权",
                         1, *permissionsForQ)
             } else {
-                EasyPermissions.requestPermissions(activity, "需要权限",
+                EasyPermissions.requestPermissions(activity, "地图定位需要请求授权",
                         1, *permissions)
             }
         }
