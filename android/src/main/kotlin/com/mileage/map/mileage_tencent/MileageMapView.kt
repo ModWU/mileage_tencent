@@ -238,8 +238,8 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
         }
     }
 
-    override fun onStatusUpdate(p0: String?, p1: Int, p2: String?) {
-       // Log.d(TAG, "id##$viewId => MileageMapView -> onStatusUpdate -> p0: $p0, p1: $p1, p2: $p2")
+    override fun onStatusUpdate(name: String?, status: Int, desc: String?) {
+        Log.d(TAG, "id##$viewId => MileageMapView -> onStatusUpdate -> name: $name, status: $status, desc: $desc")
     }
 
     override fun activate(onLocationChangedListener: LocationSource.OnLocationChangedListener?) {
