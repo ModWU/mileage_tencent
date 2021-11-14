@@ -75,7 +75,7 @@ class _MyAppState extends State<MyApp> {
             children: [
               Expanded(
                   child: MileageMapView(
-                      onPlatformViewCreated: _onPlatformViewCreated)),
+                      onPlatformViewCreated: _onPlatformViewCreated, interval: 5000,)),
               GestureDetector(
                 onTap: () async {
                   if (_flutterMileageTencent == null) {

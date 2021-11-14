@@ -1,6 +1,7 @@
 package com.mileage.map.mileage_tencent
 
 //import android.os.Build
+import android.util.Log
 import androidx.annotation.NonNull
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -11,12 +12,15 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import com.gv.livechat.flutter_live_chat.PluginContext
+import io.flutter.plugin.common.PluginRegistry
+import pub.devrel.easypermissions.EasyPermissions
+
 //import io.flutter.plugin.common.PluginRegistry
 //import pub.devrel.easypermissions.EasyPermissions
 
 
 /** MileageTencentPlugin */
-class MileageTencentPlugin: FlutterPlugin, MethodCallHandler, ActivityAware/*, PluginRegistry.RequestPermissionsResultListener*/ {
+class MileageTencentPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   /// The MethodChannel that will the communication between Flutter and native Android
   ///
   /// This local reference serves to register the plugin with the Flutter Engine and unregister it
@@ -44,12 +48,6 @@ class MileageTencentPlugin: FlutterPlugin, MethodCallHandler, ActivityAware/*, P
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     PluginContext.activityPluginBinding = binding
-
-//    binding.addRequestPermissionsResultListener(this)
-
-//    /*if (Build.VERSION.SDK_INT >= 23) {
-//      PermissionUtils.requirePermission(binding.activity)
-//    }*/
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
@@ -61,16 +59,7 @@ class MileageTencentPlugin: FlutterPlugin, MethodCallHandler, ActivityAware/*, P
   }
 
   override fun onDetachedFromActivity() {
-    //PluginContext.activityPluginBinding?.removeRequestPermissionsResultListener(this)
     PluginContext.activityPluginBinding = null
   }
 
-  /*override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?, grantResults: IntArray?): Boolean {
-    var isHandled = false
-    if (grantResults != null && permissions != null) {
-      EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
-      isHandled = true
-    }
-    return isHandled
-  }*/
 }

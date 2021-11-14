@@ -6,6 +6,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.location.Location
 import android.net.Uri
+import android.os.Build
 import android.os.Looper
 import android.util.Log
 import android.view.View
@@ -24,9 +25,11 @@ import com.tencent.map.geolocation.TencentLocationRequest
 import com.tencent.tencentmap.mapsdk.maps.*
 import com.tencent.tencentmap.mapsdk.maps.model.*
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.PluginRegistry
+import pub.devrel.easypermissions.EasyPermissions
 
 class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, args: Any?) :
-        PlatformView, MethodChannel.MethodCallHandler, DefaultLifecycleObserver, TencentMap.OnMapLoadedCallback, TencentLocationListener, LocationSource {
+        PlatformView, MethodChannel.MethodCallHandler, DefaultLifecycleObserver, TencentMap.OnMapLoadedCallback, TencentLocationListener, LocationSource, PluginRegistry.RequestPermissionsResultListener {
 
     private val context: Context = context
 
@@ -50,13 +53,33 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
 
     private var locationChangedListener: LocationSource.OnLocationChangedListener? = null
 
+    private var interval: Long = 1000;
+
 
     companion object{
         const val TAG: String = "mileage_tencent"
     }
 
     init {
-        Log.d(TAG, "id##$viewId => MileageMapView -> init")
+
+        if (args is Int) {
+            interval = args.toLong()
+        } else if (args is Long) {
+            interval = args
+        }
+
+        if (interval < 1000) {
+            interval = 1000
+        }
+
+        Log.d(TAG, "id##$viewId => MileageMapView -> init => interval: $interval")
+
+        activityPluginBinding.addRequestPermissionsResultListener(this)
+        if (Build.VERSION.SDK_INT >= 23) {
+            Log.d(TAG, "id##$viewId => MileageMapView -> requiredPermission start")
+            PermissionUtils.requirePermission(activityPluginBinding.activity)
+            Log.d(TAG, "id##$viewId => MileageMapView -> requiredPermission end")
+        }
 
         methodChannel = MethodChannel(messenger, "com.mileage.map.mileage_tencent/map_view_$viewId")
         methodChannel?.setMethodCallHandler(this)
@@ -89,7 +112,8 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
                 45f)) //目标旋转角 0~360° (正北方为0)
 
         tencentMap.moveCamera(cameraSigma)*/
-
+        //用于访问腾讯定位服务的类, 周期性向客户端提供位置更新
+        locationManager = TencentLocationManager.getInstance(context)
         initLocation()
 
         val lifecycle: Lifecycle = FlutterLifecycleAdapter.getActivityLifecycle(activityPluginBinding)
@@ -102,18 +126,39 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
         //tencentMap.moveCamera(cameraUpdate)
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>?, grantResults: IntArray?): Boolean {
+        var isHandled = false
+        Log.d(TAG, "id##$viewId => MileageMapView -> onRequestPermissionsResult -> requestCode: $requestCode, permissions: $permissions, grantResults: $grantResults")
+        if (grantResults != null && permissions != null) {
+            EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
+            isHandled = true
+        }
+        return isHandled
+    }
+
     /**
      * 定位的一些初始化设置
      */
     private fun initLocation() {
-        //用于访问腾讯定位服务的类, 周期性向客户端提供位置更新
-        locationManager = TencentLocationManager.getInstance(context)
         //创建定位请求
         locationRequest = TencentLocationRequest.create()
         locationRequest!!.isAllowDirection = true
         //设置定位周期（位置监听器回调周期）为3s
-        locationRequest!!.interval = 1000 * 60
+        locationRequest!!.interval = interval
     }
+
+    // ====== location callback
+   /* private fun startLocation() {
+        locationRequest = TencentLocationRequest.create()
+        locationRequest!!.isAllowDirection = true
+        //设置定位周期（位置监听器回调周期）为3s
+        locationRequest!!.interval = interval
+        locationManager!!.requestLocationUpdates(locationRequest, this, Looper.myLooper())
+    }
+
+    private fun stopLocation() {
+        locationManager!!.removeUpdates(this)
+    }*/
 
     /*private fun buildNotification(): Notification? {
         var builder: Notification.Builder? = null
@@ -155,6 +200,7 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
     }
 
     override fun dispose() {
+        activityPluginBinding.removeRequestPermissionsResultListener(this)
         locationManager?.removeUpdates(this)
         tencentMap.setLocationSource(null)
         tencentMap.removeOnMapLoadedCallback(this)
@@ -183,12 +229,14 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
         Log.d(TAG, "id##$viewId => MileageMapView -> onResume")
         mapView?.onResume()
         super.onResume(owner)
+        //startLocation();
     }
 
     override fun onPause(owner: LifecycleOwner) {
         Log.d(TAG, "id##$viewId => MileageMapView -> onPause")
         mapView?.onPause()
         super.onPause(owner)
+       // stopLocation();
     }
 
     override fun onStop(owner: LifecycleOwner) {
@@ -242,13 +290,10 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
         Log.d(TAG, "id##$viewId => MileageMapView -> onStatusUpdate -> name: $name, status: $status, desc: $desc")
     }
 
-    override fun activate(onLocationChangedListener: LocationSource.OnLocationChangedListener?) {
-        //这里我们将地图返回的位置监听保存为当前 Activity 的成员变量
-        locationChangedListener = onLocationChangedListener
-        //开启定位
-        val err = locationManager!!.requestLocationUpdates(
+    private fun requestPositionUpdates() : Int{
+        val err: Int = locationManager!!.requestLocationUpdates(
                 locationRequest, this, Looper.myLooper())
-        Log.d(TAG, "id##$viewId => MileageMapView -> activate -> err: $err")
+        Log.d(TAG, "id##$viewId => MileageMapView -> requestPositionUpdates -> err: $err")
         when (err) {
             1 -> Toast.makeText(context,
                     "设备缺少使用腾讯定位服务需要的基本条件",
@@ -260,6 +305,14 @@ class MileageMapView(context: Context, messenger: BinaryMessenger, viewId: Int, 
             else -> {
             }
         }
+        return err
+    }
+
+    override fun activate(onLocationChangedListener: LocationSource.OnLocationChangedListener?) {
+        //这里我们将地图返回的位置监听保存为当前 Activity 的成员变量
+        locationChangedListener = onLocationChangedListener
+        //开启定位
+        val err = requestPositionUpdates()
 
         if (err == 1 || err == 2 || err == 3) {
             methodChannel!!.invokeMethod("onActivate", mapOf(

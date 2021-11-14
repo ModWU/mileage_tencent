@@ -5,14 +5,18 @@ import 'package:flutter/services.dart';
 import 'package:mileage_tencent/mileage_tencent.dart';
 
 class MileageMapView extends StatefulWidget {
-  const MileageMapView({Key? key, this.onPlatformViewCreated})
-      : super(key: key);
+  const MileageMapView(
+      {Key? key, this.onPlatformViewCreated, this.interval = 1000})
+      : assert(interval >= 1000),
+        super(key: key);
 
   @override
   State<StatefulWidget> createState() => _MileageMapViewState();
 
   final void Function(FlutterMileageTencent flutterMileageTencent)?
       onPlatformViewCreated;
+
+  final int interval;
 }
 
 class _MileageMapViewState extends State<MileageMapView> {
@@ -23,6 +27,7 @@ class _MileageMapViewState extends State<MileageMapView> {
           viewType: 'com.mileage.map.mileage_tencent/map_view',
           layoutDirection: TextDirection.ltr,
           onPlatformViewCreated: _onPlatformViewCreated,
+          creationParams: widget.interval,
           creationParamsCodec: const StandardMessageCodec());
     }
 
